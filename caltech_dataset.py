@@ -152,13 +152,6 @@ class Caltech(VisionDataset):
         np.random.shuffle(self.data)
 
 
-    def preprocess(self):
-        self.data = []
-        for img in self.imgs:
-            img = img.resize((IMG_SIZE, IMG_SIZE))
-            self.data.append(np)
-
-
     def __getitem__(self, index, label_int=False):
         '''
         __getitem__ should access an element through its index
