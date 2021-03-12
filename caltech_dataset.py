@@ -85,7 +85,7 @@ def split_caltech(root, train_file = './train.txt', test_file = './test.txt', te
     print("* Preparing train/test split")
     with open(train_file, 'w') as train_file, open(test_file, 'w') as test_file:
         for file_name in tqdm(glob(root + "/*/*")):
-            if np.random.rand() > test_size:
+            if np.random.rand() >= test_size:
                 train_file.write(file_name+'\n')
             else:
                 test_file.write(file_name + '\n')
@@ -127,6 +127,78 @@ def pil_loader(path):
         img = Image.open(f)
         return img.convert('RGB')
 
+IMG_SIZE = 50
+
+
+class Caltech(VisionDataset):
+    def __init__(self, root, split_file=None, transform=None, target_transform=None):
+        super(Caltech, self).__init__(root, transform=transform, target_transform=target_transform)
+
+        self.split_file = split_file
+        self.targets = []
+        self.data = []
+
+        with open(self.split_file, 'r') as f:
+            for line in tqdm(f):
+                if "BACKGROUND_Google" in line:
+                    continue
+
+                tmp = line.split('\\')
+                label = tmp[-2]
+                self.data.append((line.replace('\n',''), label))
+                self.targets.append(label)
+
+        self.targets = set(self.targets)
+        np.random.shuffle(self.data)
+
+
+    def preprocess(self):
+        self.data = []
+        for img in self.imgs:
+            img = img.resize((IMG_SIZE, IMG_SIZE))
+            self.data.append(np)
+
+
+    def __getitem__(self, index, label_int=False):
+        '''
+        __getitem__ should access an element through its index
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        '''
+
+        image_path, label = self.data[index] # Provide a way to access image and label via index
+                                        # Image should be a PIL Image
+                                        # label can be int
+        image = pil_loader(image_path)
+
+        # Applies preprocessing when accessing the image
+        if self.transform is not None:
+            image = self.transform(image)
+
+        if self.target_transform is not None:
+            label = self.target_transform(label)
+
+        return image, label
+
+    def __len__(self):
+        '''
+        The __len__ method returns the length of the dataset
+        It is mandatory, as this is used by several other components
+        '''
+        return self.data.__len__()
+
+    def __str__(self):
+        return f"Loaded {self.split}set ({self.__len__()} entries):\n"+self.categories_distr.__str__()
+
 
 if __name__ == '__main__':
-    download_and_prepare_caltech('.', type='101')
+    # download_and_prepare_caltech('.', type='101')
+    test_ds = Caltech(r"C:\Users\Kaloo\PycharmProjects\pytorch-playground\101_ObjectCategories", split_file='101-test.txt')
+    import  matplotlib.pyplot as plt
+    image, label =test_ds[np.random.randint(0,len(test_ds))]
+    plt.imshow(image)
+    plt.title(label)
+    plt.show()
